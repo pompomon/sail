@@ -1,0 +1,10 @@
+{
+    "translateKey": "",
+    "translateEndpoint": "https://api.cognitive.microsofttranslator.com/",
+    "translateRegion": "westeurope",
+    "visionKey": "",
+    "visionEndpoint": "",
+    "speechKey": "",
+    "speechEndpoint": "https://westeurope.api.cognitive.microsoft.com/sts/v1.0/",
+    "speechRegion": "westeurope"
+}
