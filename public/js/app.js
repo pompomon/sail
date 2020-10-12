@@ -7,17 +7,65 @@ function init() {
   // Global variables
   let webcamStream;
   let authToken;
+  let selectedLanguageId;
   let isProcessing = false;
+  const region = "westeurope";
   const appContainer = document.getElementById("appContainer");
-  const videoElement = document.querySelector("video");
+  const videoElement = document.getElementById("video");
+  const languageSelector = document.getElementById("languageSelector");
+  const languages = [];
 
-  const getToken = () => {
+  const getLanguages = () => {
+    var request = new XMLHttpRequest();
+    request.open(
+      "GET",
+      "https://" +
+        region +
+        ".tts.speech.microsoft.com/cognitiveservices/voices/list",
+      true
+    );
+    request.setRequestHeader("Authorization", "Bearer " + authToken);
+
+    request.onload = function () {
+      if (request.status >= 200 && request.status < 400) {
+        const response = this.response;
+        const neuralSupport = response.indexOf("AriaNeural") > 0;
+        const defaultVoice = neuralSupport ? "AriaNeural" : "AriaRUS";
+        const data = JSON.parse(response);
+        languageSelector.innerHTML = "";
+        data.forEach((voice, index) => {
+          languageSelector.innerHTML +=
+            '<option value="' + index + '">' + voice.Locale + "</option>";
+          if (voice.Name.indexOf(defaultVoice) > 0) {
+            selectedLanguageId = index;
+          }
+          languages.push(voice);
+        });
+        languageSelector.selectedIndex = selectedLanguageId;
+      } else {
+        window.console.log(this);
+        eventsDiv.innerHTML +=
+          "cannot get voice list, code: " +
+          this.status +
+          " detail: " +
+          this.statusText +
+          "\r\n";
+      }
+    };
+
+    request.send();
+  };
+
+  const getToken = (callback) => {
     const request = new XMLHttpRequest();
     request.open("POST", "/token", true);
     request.onload = (response) => {
       if (request.status >= 200 && request.status < 400) {
         // Success!
         authToken = JSON.parse(request.responseText).token;
+        if (typeof callback === "function") {
+          callback();
+        }
       } else {
         console.error(request);
       }
@@ -36,8 +84,7 @@ function init() {
       "westeurope"
     );
 
-    speechConfig.speechSynthesisVoiceName =
-      "Microsoft Server Speech Text to Speech Voice (cs-CZ, VlastaNeural)";
+    speechConfig.speechSynthesisVoiceName = "";
 
     player = new SpeechSDK.SpeakerAudioDestination();
     player.onAudioEnd = function (_) {
@@ -210,13 +257,14 @@ function init() {
   }
 
   bindCamera(videoElement);
-  getToken();
+  getToken(() => {
+    getLanguages();
+  });
 
   if (navigator.getUserMedia) {
-    document.addEventListener("click", function () {
-      const videoElement = document.querySelector("video");
+    videoElement.addEventListener("click", function () {
       const canvasElement = document.querySelector("canvas");
-      if(!isProcessing) {
+      if (!isProcessing) {
         isProcessing = true;
         takePhoto(videoElement, canvasElement);
       }

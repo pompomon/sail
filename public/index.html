@@ -12,15 +12,18 @@
 <body>
   <main class="appContainer" id="appContainer">
     <div class="appUserInput">
+      <div class="appCanvasContainer">
+        <canvas class="appCanvas" id="myCanvas"></canvas>
+      </div>
+      <div class="languages">
+        <select id="languageSelector"><option value="-1">Loading languages</option></select>
+      </div>
       <label class="photoUploadLabel hide" for="photoUpload">
         <span class="photoUploadLabelText">Upload photo</span>
         <input type="file" accept="image/jpeg" id="photoUpload" data-role="none" capture="camera"
           class="photoUploadInput" />
       </label>
       <video id="video" autoplay></video>
-      <div class="appCanvasContainer">
-        <canvas class="appCanvas" id="myCanvas"></canvas>
-      </div>
     </div>
   </main>
   <script
