@@ -7,12 +7,14 @@ function init() {
   // Global variables
   let webcamStream;
   let authToken;
-  let selectedLanguageId;
   let isProcessing = false;
   const region = "westeurope";
   const appContainer = document.getElementById("appContainer");
   const videoElement = document.getElementById("video");
+  const appCanvasContainer = document.querySelector(".appCanvasContainer");
   const languageSelector = document.getElementById("languageSelector");
+  const defaultNeuralLanguage = 'VlastaNeural';
+  const defaultLanguage = 'Jakub';
   const languages = [];
 
   const getLanguages = () => {
@@ -29,19 +31,23 @@ function init() {
     request.onload = function () {
       if (request.status >= 200 && request.status < 400) {
         const response = this.response;
-        const neuralSupport = response.indexOf("AriaNeural") > 0;
-        const defaultVoice = neuralSupport ? "AriaNeural" : "AriaRUS";
+        const neuralSupport = response.indexOf(defaultNeuralLanguage) > 0;
+        const defaultVoice = neuralSupport ? defaultNeuralLanguage : defaultLanguage;
         const data = JSON.parse(response);
+        let selectedLanguageId = 0;
         languageSelector.innerHTML = "";
         data.forEach((voice, index) => {
           languageSelector.innerHTML +=
-            '<option value="' + index + '">' + voice.Locale + "</option>";
+            '<option value="' + index + '">' + voice.Name + "</option>";
           if (voice.Name.indexOf(defaultVoice) > 0) {
             selectedLanguageId = index;
           }
           languages.push(voice);
         });
         languageSelector.selectedIndex = selectedLanguageId;
+        languageSelector.onselec = () => {
+
+        };
       } else {
         window.console.log(this);
         eventsDiv.innerHTML +=
@@ -84,13 +90,13 @@ function init() {
       "westeurope"
     );
 
-    speechConfig.speechSynthesisVoiceName = "";
+    speechConfig.speechSynthesisVoiceName = languages[languageSelector.selectedIndex].Name;
 
     player = new SpeechSDK.SpeakerAudioDestination();
     player.onAudioEnd = function (_) {
       window.console.log("playback finished");
       // Reset elements
-      document.querySelector("canvas").classList.add("hide");
+      appCanvasContainer.classList.add("hide");
       isProcessing = false;
     };
 
@@ -146,7 +152,8 @@ function init() {
 
   const submitImageFromCanvas = (canvasElement) => {
     const request = new XMLHttpRequest();
-    request.open("POST", "/sail", true);
+    const language = languages[languageSelector.selectedIndex].Locale;
+    request.open("POST", `/sail?language=${language}`, true);
     request.setRequestHeader("Content-Type", "application/octet-stream");
     request.onload = function () {
       if (request.status >= 200 && request.status < 400) {
@@ -172,7 +179,7 @@ function init() {
   };
 
   const takePhoto = (videoElement, canvasElement) => {
-    appContainer.querySelector(".appCanvas").classList.remove("hide");
+    appCanvasContainer.classList.remove("hide");
     const canvasContext = canvasElement.getContext("2d");
     const videoSettings = webcamStream.getVideoTracks()[0].getSettings();
     canvasContext.drawImage(
@@ -222,17 +229,14 @@ function init() {
       );
     } else {
       console.log("getUserMedia not supported");
-      appContainer.querySelector(".appCanvasContainer").classList.add("hide");
+      appCanvasContainer.classList.add("hide");
       appContainer.querySelector(".photoUploadLabel").classList.remove("hide");
       const canvasElement = document.querySelector("canvas");
       const canvasContext = canvasElement.getContext("2d");
       const image = new Image();
       image.onload = () => {
-        appContainer
-          .querySelector(".appCanvasContainer")
-          .classList.remove("hide");
+        appCanvasContainer.classList.remove("hide");
         appContainer.querySelector(".photoUploadLabel").classList.add("hide");
-        canvasElement.classList.remove("hide");
         canvasContext.drawImage(
           image,
           0,
@@ -262,6 +266,7 @@ function init() {
   });
 
   if (navigator.getUserMedia) {
+    appCanvasContainer.classList.add("hide");
     videoElement.addEventListener("click", function () {
       const canvasElement = document.querySelector("canvas");
       if (!isProcessing) {

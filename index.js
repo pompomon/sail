@@ -31,26 +31,26 @@ app.post('/token', async (request, response) => {
 });
 app.post('/sail', (request, response) => {
     const imageData = request.body;
-    console.log(request);
-    return;
+    const languageLocale = request.query.language;
+    const [language] = languageLocale.split('-');
     visioner.vision(imageData, async (results) => {
         const {description, objects} = results;
         const caption = description.captions[0].text;
         const tags = description.tags;
 
-        const translationResults = await translator.translateText(caption, 'cs');
+        const translationResults = await translator.translateText(caption, language);
         const {translations} = translationResults[0];
         const descriptionTranslation = translations[0].text;
         const tagTranslations = [];
         const objectTranslations = [];
         console.log(tags)
         for (const tag of tags) {
-            const translationResults = await translator.translateText(tag, 'cs');
+            const translationResults = await translator.translateText(tag, language);
             const {translations} = translationResults[0];
             tagTranslations.push(translations[0].text);
         };
         for (const object of objects) {
-            const translationResults = await translator.translateText(object.object, 'cs');
+            const translationResults = await translator.translateText(object.object, language);
             const {translations} = translationResults[0];
             objectTranslations.push(translations[0].text);
         };
