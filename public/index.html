@@ -23,7 +23,10 @@
         <input type="file" accept="image/jpeg" id="photoUpload" data-role="none" capture="camera"
           class="photoUploadInput" />
       </label>
-      <video id="video" autoplay></video>
+      <div class="videoContainer">
+        <video id="video" autoplay></video>
+        <div class="videoOverlay">Tap to take picture</div>
+      </div>
     </div>
   </main>
   <script src="js/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>

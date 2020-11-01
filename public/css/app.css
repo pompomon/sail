@@ -15,7 +15,7 @@ html, body {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    padding: 1em;
+    border: .5rem solid #000;
 }
 
 /** Video + canvas **/
@@ -27,11 +27,31 @@ html, body {
     overflow: hidden;
 }
 
-.appContainer video {
+.videoContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.videoContainer video {
     position: relative;
     width: 100%;
     height: 100%;
     object-fit: fill;
+}
+
+.videoContainer .videoOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: #e6e6e6;
+    color: #000;
+    opacity: 0.2;
+    font-size: 16rem;
+    text-align: center;
+    cursor: pointer;
 }
 
 .appUserInput .appCanvasContainer {
@@ -92,9 +112,10 @@ html, body {
     z-index: 2;
     right: 0;
     left: 0;
+    text-align: center;
 }
 
-.languages #languagesSelector {
+.languages #languageSelector {
     font-size: 1.6rem;
     width: 100%;
 }

@@ -11,9 +11,19 @@ function init() {
   const region = "westeurope";
   const appContainer = document.getElementById("appContainer");
   const videoElement = document.getElementById("video");
+  const videoOverlayElement = document.querySelector(".videoOverlay");
   const appCanvasContainer = document.querySelector(".appCanvasContainer");
   const languageSelector = document.getElementById("languageSelector");
   const languages = [];
+  const languageRegex = new RegExp(/\(([A-Za-z-]+), ([A-Za-z]+)/i);
+
+  const getLanguageName = (languageFullString) => {
+    const matches = languageFullString.match(languageRegex);
+    if (matches.length > 2) {
+      return `${matches[2]} (${matches[1]})`;
+    }
+    return languageFullString;
+  };
 
   const renderLanguages = (languagesList, isNeural) => {
     let selectedLanguageId = 0;
@@ -21,7 +31,7 @@ function init() {
     languageSelector.innerHTML = "";
     languagesList.forEach((voice, index) => {
       languageSelector.innerHTML +=
-        '<option value="' + index + '">' + voice.Name + "</option>";
+        '<option value="' + index + '">' + getLanguageName(voice.Name) + "</option>";
       if (voice.Name.indexOf(defaultVoice) > 0) {
         selectedLanguageId = index;
       }
@@ -179,7 +189,7 @@ function init() {
 
   if (navigator.getUserMedia) {
     appCanvasContainer.classList.add("hide");
-    videoElement.addEventListener("click", function () {
+    videoOverlayElement.addEventListener("click", function () {
       const canvasElement = document.querySelector("canvas");
       if (!isProcessing) {
         isProcessing = true;
@@ -204,10 +214,10 @@ function onDocumentReady(fn) {
 onDocumentReady(init);
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function() {
+  window.addEventListener("load", function () {
     navigator.serviceWorker
       .register("/serviceWorker.js")
-      .then(res => console.log("service worker registered"))
-      .catch(err => console.log(err));
+      .then((res) => console.log("service worker registered"))
+      .catch((err) => console.log(err));
   });
 }
