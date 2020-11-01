@@ -49,9 +49,10 @@ html, body {
     background-color: #e6e6e6;
     color: #000;
     opacity: 0.2;
-    font-size: 16rem;
+    font-size: 7rem;
     text-align: center;
     cursor: pointer;
+    padding-top: 2rem;
 }
 
 .appUserInput .appCanvasContainer {
@@ -81,11 +82,10 @@ html, body {
     justify-content: center;
     align-content: center;
     margin-top: 5%;
-    height: 80%;
+    height: 100%;
     flex-wrap: wrap;
-    font-size: 1.3em;
-    border: 0.5em solid #3c3c3c;
-    border-radius: 50%;
+    font-size: 5rem;
+    border-radius: 0;
     text-transform: uppercase;
 }
 
@@ -107,15 +107,14 @@ html, body {
 }
 
 /*Language selector*/
-.languages {
+.controls {
     position: absolute;
     z-index: 2;
     right: 0;
     left: 0;
-    text-align: center;
+    display: flex;
 }
 
-.languages #languageSelector {
-    font-size: 1.6rem;
-    width: 100%;
+.controls .control {
+    font-size: 1.1rem;
 }

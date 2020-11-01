@@ -16,6 +16,7 @@ function init() {
   const languageSelector = document.getElementById("languageSelector");
   const languages = [];
   const languageRegex = new RegExp(/\(([A-Za-z-]+), ([A-Za-z]+)/i);
+  const storageModeName = "uploadFromFile"
 
   const getLanguageName = (languageFullString) => {
     const matches = languageFullString.match(languageRegex);
@@ -119,16 +120,20 @@ function init() {
   };
 
   // Initialize camera
-  function bindCamera(videoElement) {
+  function initApp(videoElement) {
     // getMedia polyfill
     navigator.getUserMedia =
       navigator.getUserMedia ||
       navigator.webkitGetUserMedia ||
       navigator.mozGetUserMedia ||
       navigator.msGetUserMedia;
-
+    const uploadFromFile = localStorage.getItem(storageModeName);  
+    document.getElementById("switchMode").addEventListener("click", () => {
+      localStorage.setItem(storageModeName, uploadFromFile === "true" ? "false" : "true");
+      document.location.reload();
+    });
     // Check that getUserMedia is supported
-    if (navigator.getUserMedia) {
+    if (navigator.getUserMedia && uploadFromFile !== "true") {
       navigator.getUserMedia(
         // constraints
         {
@@ -150,7 +155,6 @@ function init() {
         }
       );
     } else {
-      console.log("getUserMedia not supported");
       appCanvasContainer.classList.add("hide");
       appContainer.querySelector(".photoUploadLabel").classList.remove("hide");
       const canvasElement = document.querySelector("canvas");
@@ -182,7 +186,7 @@ function init() {
     }
   }
 
-  bindCamera(videoElement);
+  initApp(videoElement);
   getToken(() => {
     getLanguages(authToken, region, renderLanguages);
   });
