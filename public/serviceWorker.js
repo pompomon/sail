@@ -1,4 +1,4 @@
-const staticCache = "sail-app";
+const staticCache = "sail-app-v2";
 const assets = [
   "/",
   "/index.html",
