@@ -67,7 +67,7 @@ const synthsizeText = ({text, language, region, authenticationToken, onEndCallba
 
   // The event synthesis completed signals that the synthesis is completed.
   synthesizer.synthesisCompleted = function (s, e) {
-    console.log(e);
+    window.console.log(e);
   };
 
   // The event signals that the service has stopped processing speech.

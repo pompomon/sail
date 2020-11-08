@@ -31,6 +31,10 @@ app.post('/token', async (request, response) => {
 });
 app.post('/sail', (request, response) => {
     const imageData = request.body;
+    // Uncomment for debugging the image quality
+    // const fs = require("fs");
+    // fs.writeFileSync("test.png", imageData);
+
     const languageLocale = request.query.language;
     const [language] = languageLocale.split('-');
     visioner.vision(imageData, async (results) => {
