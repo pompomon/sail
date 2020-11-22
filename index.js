@@ -4,68 +4,110 @@
  */
 "use strict";
 
-const translator =  require('./modules/translate');
-const visioner =  require('./modules/vision');
-const speech = require('./modules/speech');
-const express = require('express');
+const translator = require("./modules/translate");
+const visioner = require("./modules/vision");
+const speech = require("./modules/speech");
+const facer = require("./modules/face");
+const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 1337;
-const bodyParser = require('body-parser')
+const bodyParser = require("body-parser");
+const BOSS_ID = "b29256a3-bdd7-4fbd-9fc7-a4329afe7ef6";
+const NOT_BOSS_ID = "TBD";
+const BOSS_DETECTED_PHRASE = "Boss detected, time for work";
+const NOT_BOSS_DETECTED_PHRASE = "Boss detected, time for coffee";
 
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.raw({ limit: '10MB' }));
-app.use(express.static('public'));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.raw({ limit: "10MB" }));
+app.use(express.static("public"));
 
-app.use(function(req, res, next) {
-    // TODO: fix the header to deny requests from other sites
-    res.header("Access-Control-Allow-Origin", "*");
-    // res.header("Access-Control-Allow-Origin", "https://sailwebapp.azurewebsites.net/");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    res.header("Vary", "Origin");
-    next();
+app.use(function (req, res, next) {
+  // TODO: fix the header to deny requests from other sites
+  res.header("Access-Control-Allow-Origin", "*");
+  // res.header("Access-Control-Allow-Origin", "https://sailwebapp.azurewebsites.net/");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  res.header("Vary", "Origin");
+  next();
 });
-app.post('/token', async (request, response) => {
-    const token = await speech.issueToken();
-    response.setHeader('Content-Type', 'text/json');
-    response.end(`{ "token": "${token}" }`);
+app.post("/token", async (request, response) => {
+  const token = await speech.issueToken();
+  response.setHeader("Content-Type", "text/json");
+  response.end(`{ "token": "${token}" }`);
 });
-app.post('/sail', (request, response) => {
-    const imageData = request.body;
-    // Uncomment for debugging the image quality
-    // const fs = require("fs");
-    // fs.writeFileSync("test.png", imageData);
+app.post("/sail", (request, response) => {
+  const imageData = request.body;
+  // Uncomment for debugging the image quality
+  // const fs = require("fs");
+  // fs.writeFileSync("test.png", imageData);
 
-    const languageLocale = request.query.language;
-    const [language] = languageLocale.split('-');
-    visioner.vision(imageData, async (results) => {
-        const {description, objects} = results;
-        const caption = description.captions[0].text;
-        const tags = description.tags;
+  const languageLocale = request.query.language;
+  const [language] = languageLocale.split("-");
+  visioner.vision(imageData, async (results) => {
+    const { description, objects } = results;
+    const caption = description.captions[0].text;
+    const tags = description.tags;
 
-        const translationResults = await translator.translateText(caption, language);
-        const {translations} = translationResults[0];
-        const descriptionTranslation = translations[0].text;
-        const tagTranslations = [];
-        const objectTranslations = [];
-        console.log(tags)
-        for (const tag of tags) {
-            const translationResults = await translator.translateText(tag, language);
-            const {translations} = translationResults[0];
-            tagTranslations.push(translations[0].text);
-        };
-        for (const object of objects) {
-            const translationResults = await translator.translateText(object.object, language);
-            const {translations} = translationResults[0];
-            objectTranslations.push(translations[0].text);
-        };
-        response.setHeader('Content-Type', 'text/json');
-        const responseObject = {
-            description: descriptionTranslation,
-            tags: [tagTranslations],
-            objects: [objectTranslations]
+    const translationResults = await translator.translateText(
+      caption,
+      language
+    );
+    const { translations } = translationResults[0];
+    const descriptionTranslation = translations[0].text;
+    const tagTranslations = [];
+    const objectTranslations = [];
+    const personsTranslations = [];
+    const faceDetection = await facer.detectFace(imageData);
+    const { faceId } = JSON.parse(faceDetection)[0];
+    if (faceId) {
+      const faceIdentification = await facer.identifyFace([faceId], "boss");
+      const candidates = faceIdentification.filter(
+        (item) => item.faceId === faceId
+      )[0].candidates;
+      const bestMatchCandidate = candidates[0];
+      console.log(bestMatchCandidate);
+      if (bestMatchCandidate) {
+        let personDetectedString = "";
+        if (bestMatchCandidate.personId === BOSS_ID) {
+          personDetectedString = BOSS_DETECTED_PHRASE;
+        } else if (bestMatchCandidate.personId === NOT_BOSS_ID) {
+          personDetectedString = NOT_BOSS_DETECTED_PHRASE;
         }
-        response.end(JSON.stringify(responseObject));
-    });
+        console.log(personDetectedString);
+        if (personDetectedString !== "") {
+          const translationResults = await translator.translateText(
+            personDetectedString,
+            language
+          );
+          const { translations } = translationResults[0];
+          personsTranslations.push(translations[0].text);
+        }
+      }
+    }
+    for (const tag of tags) {
+      const translationResults = await translator.translateText(tag, language);
+      const { translations } = translationResults[0];
+      tagTranslations.push(translations[0].text);
+    }
+    for (const object of objects) {
+      const translationResults = await translator.translateText(
+        object.object,
+        language
+      );
+      const { translations } = translationResults[0];
+      objectTranslations.push(translations[0].text);
+    }
+    response.setHeader("Content-Type", "text/json");
+    const responseObject = {
+      description: descriptionTranslation,
+      tags: tagTranslations,
+      objects: objectTranslations,
+      persons: personsTranslations,
+    };
+    response.end(JSON.stringify(responseObject));
+  });
 });
 
-app.listen(PORT, () => console.log(`Listening on ${ PORT }`));
+app.listen(PORT, () => console.log(`Listening on ${PORT}`));

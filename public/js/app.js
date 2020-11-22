@@ -76,10 +76,10 @@ function init() {
       if (request.status >= 200 && request.status < 400) {
         // Success!
         console.log(request.responseText);
-        const { description, tags, objects } = JSON.parse(request.responseText);
+        const { description, tags, objects, persons } = JSON.parse(request.responseText);
         const allItems = `${description}. ${tags.join(",")}. ${objects.join(
           ","
-        )}`;
+        )}. ${persons}`;
         const selectedLanguage = languages[languageSelector.selectedIndex].Name;
         synthsizeText({
           text: allItems,
