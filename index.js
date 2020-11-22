@@ -60,8 +60,9 @@ app.post("/sail", (request, response) => {
     const objectTranslations = [];
     const personsTranslations = [];
     const faceDetection = await facer.detectFace(imageData);
-    const { faceId } = JSON.parse(faceDetection)[0];
-    if (faceId) {
+    const faceDetectionResult = JSON.parse(faceDetection);
+    if (faceDetectionResult[0]) {
+      const { faceId } = faceDetectionResult[0];
       const faceIdentification = await facer.identifyFace([faceId], "boss");
       const candidates = faceIdentification.filter(
         (item) => item.faceId === faceId
