@@ -237,7 +237,7 @@ function init() {
     getLanguages(authToken, region, renderLanguages);
   });
 
-  if (navigator.getUserMedia) {
+  if (navigator.mediaDevices.getUserMedia) {
     appCanvasContainer.classList.add("hide");
     videoOverlayElement.addEventListener("click", function () {
       const canvasElement = document.querySelector("canvas");
