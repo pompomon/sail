@@ -11,6 +11,7 @@ function init() {
   const region = "westeurope";
   const appContainer = document.getElementById("appContainer");
   const videoElement = document.getElementById("video");
+  const loaderElement = document.getElementById("loader");
   const videoOverlayElement = document.querySelector(".videoOverlay");
   const appCanvasContainer = document.querySelector(".appCanvasContainer");
   const languageSelector = document.getElementById("languageSelector");
@@ -68,6 +69,7 @@ function init() {
   };
 
   const submitImageFromCanvas = (canvasElement, player) => {
+    loaderElement.classList.remove('hide');
     const request = new XMLHttpRequest();
     const language = languages[languageSelector.selectedIndex].Locale;
     request.open("POST", `/sail?language=${language}`, true);
@@ -82,6 +84,7 @@ function init() {
         const text = `${description}. ${tags.join(",")}. ${objects.join(
           ","
         )}. ${persons}`;
+        loaderElement.classList.add('hide');
         player.speakTextAsync(
           text,
           function () {},
