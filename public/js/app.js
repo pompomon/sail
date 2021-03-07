@@ -67,7 +67,7 @@ function init() {
     request.send();
   };
 
-  const submitImageFromCanvas = (canvasElement) => {
+  const submitImageFromCanvas = (canvasElement, player) => {
     const request = new XMLHttpRequest();
     const language = languages[languageSelector.selectedIndex].Locale;
     request.open("POST", `/sail?language=${language}`, true);
@@ -76,21 +76,19 @@ function init() {
       if (request.status >= 200 && request.status < 400) {
         // Success!
         console.log(request.responseText);
-        const { description, tags, objects, persons } = JSON.parse(request.responseText);
-        const allItems = `${description}. ${tags.join(",")}. ${objects.join(
+        const { description, tags, objects, persons } = JSON.parse(
+          request.responseText
+        );
+        const text = `${description}. ${tags.join(",")}. ${objects.join(
           ","
         )}. ${persons}`;
-        const selectedLanguage = languages[languageSelector.selectedIndex].Name;
-        synthsizeText({
-          text: allItems,
-          language: selectedLanguage,
-          region,
-          authenticationToken: authToken,
-          onEndCallback: () => {
-            appCanvasContainer.classList.add("hide");
-            isProcessing = false;
-          },
-        });
+        player.speakTextAsync(
+          text,
+          function () {},
+          function (n) {
+            a.innerText = t.srTryAgain + " " + n;
+          }
+        );
       } else {
         console.error(request);
       }
@@ -105,51 +103,42 @@ function init() {
     });
   };
 
-  const takePhoto = (videoElement, canvasElement) => {
-    appCanvasContainer.classList.remove("hide");
-    const canvasContext = canvasElement.getContext("2d");
-    const videoSettings = webcamStream.getVideoTracks()[0].getSettings();
-    canvasContext.drawImage(
-      videoElement,
-      0,
-      0,
-      videoSettings.width,
-      videoSettings.height,
-      0,
-      0,
-      canvasElement.width,
-      canvasElement.height
-    );
-    submitImageFromCanvas(canvasElement);
-  };
-
   const initImageUpload = () => {
     appCanvasContainer.classList.add("hide");
     appContainer.querySelector(".photoUploadLabel").classList.remove("hide");
     const canvasElement = document.querySelector("canvas");
     const canvasContext = canvasElement.getContext("2d");
     const image = new Image();
-    image.onload = () => {
-      appCanvasContainer.classList.remove("hide");
-      canvasContext.drawImage(
-        image,
-        0,
-        0,
-        image.width,
-        image.height,
-        0,
-        0,
-        canvasElement.width,
-        canvasElement.height
-      );
-      submitImageFromCanvas(canvasElement);
-      URL.revokeObjectURL(image.src);
+    let imageSrc = null;
+    let player = null;
+    const clickCallback = () => {
+      // Binding onClick function to properly initialize voice synthesis on iOS Safari
+      const language = languages[languageSelector.selectedIndex].Name;
+      player = initPlayer({ language, authToken, region });
+      document.body.removeEventListener("click", clickCallback);
     };
+    document.body.addEventListener("click", clickCallback);
     document
       .getElementById("photoUpload")
       .addEventListener("change", (event) => {
-        const file = event.target.files[0];
-        image.src = URL.createObjectURL(file);
+        imageSrc = event.target.files[0];
+        image.addEventListener("load", () => {
+          appCanvasContainer.classList.remove("hide");
+          canvasContext.drawImage(
+            image,
+            0,
+            0,
+            image.width,
+            image.height,
+            0,
+            0,
+            canvasElement.width,
+            canvasElement.height
+          );
+          submitImageFromCanvas(canvasElement, player);
+          URL.revokeObjectURL(image.src);
+        });
+        image.src = URL.createObjectURL(imageSrc);
       });
   };
 
@@ -183,14 +172,6 @@ function init() {
         });
       };
     }
-
-    const cameraConstraints = {
-      audio: false,
-      video: {
-        width: { min: 640, ideal: 1280, max: 1920 },
-        height: { min: 480, ideal: 720, max: 1080 }
-      }
-    };
 
     navigator.mediaDevices
       .getUserMedia({
@@ -240,10 +221,26 @@ function init() {
   if (navigator.mediaDevices.getUserMedia) {
     appCanvasContainer.classList.add("hide");
     videoOverlayElement.addEventListener("click", function () {
+      const language = languages[languageSelector.selectedIndex].Name;
+      const player = initPlayer({ language, authToken, region });
       const canvasElement = document.querySelector("canvas");
       if (!isProcessing) {
         isProcessing = true;
-        takePhoto(videoElement, canvasElement);
+        appCanvasContainer.classList.remove("hide");
+        const canvasContext = canvasElement.getContext("2d");
+        const videoSettings = webcamStream.getVideoTracks()[0].getSettings();
+        canvasContext.drawImage(
+          videoElement,
+          0,
+          0,
+          videoSettings.width,
+          videoSettings.height,
+          0,
+          0,
+          canvasElement.width,
+          canvasElement.height
+        );
+        submitImageFromCanvas(canvasElement, player);
       }
     });
   }

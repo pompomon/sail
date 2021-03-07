@@ -12,10 +12,10 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 1337;
 const bodyParser = require("body-parser");
-const BOSS_ID = "b29256a3-bdd7-4fbd-9fc7-a4329afe7ef6";
-const NOT_BOSS_ID = "TBD";
+const BOSS_ID = "1f436749-81e6-4c12-b446-5c7c26eb8e23";
+const NOT_BOSS_ID = "a938e2d1-6fd7-4df7-8459-d79c315c7b93";
 const BOSS_DETECTED_PHRASE = "Boss detected, time for work";
-const NOT_BOSS_DETECTED_PHRASE = "Boss detected, time for coffee";
+const NOT_BOSS_DETECTED_PHRASE = "Dima detected, time for coffee";
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.raw({ limit: "10MB" }));

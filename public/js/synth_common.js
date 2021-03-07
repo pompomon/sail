@@ -32,69 +32,29 @@ const getLanguages = (authenticationToken, region, onLoadCallback) => {
   request.send();
 };
 
-const synthsizeText = ({text, language, region, authenticationToken, onEndCallback}) => {
-  var speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(
-    authenticationToken,
+const initPlayer = ({language, authToken, region}) => {
+  var speechConfig = SpeechSDK.SpeechTranslationConfig.fromAuthorizationToken(
+    authToken,
     region
   );
-
   speechConfig.speechSynthesisVoiceName = language;
 
-  const player = new SpeechSDK.SpeakerAudioDestination();
-  player.onAudioEnd = function (_) {
-    window.console.log("playback finished");
-    // Reset elements
-    if (typeof onEndCallback === "function") {
-        onEndCallback();
-    }
+  o = new SpeechSDK.SpeakerAudioDestination();
+  o.onAudioEnd = function () {
+    console.log("audioEnd");
+  };
+  i = SpeechSDK.AudioConfig.fromSpeakerOutput(o);
+  n = new SpeechSDK.SpeechSynthesizer(speechConfig, i);
+  n.synthesisCompleted = function () {
+    n.close();
+    n = null;
+  };
+  n.SynthesisCanceled = function (n, i) {
+    var r;
+    r = e.CancellationDetails.fromResult(i);
+    r.reason === e.CancellationReason.Error &&
+      (a.innerText = t.srTryAgain);
   };
 
-  var audioConfig = SpeechSDK.AudioConfig.fromSpeakerOutput(player);
-
-  synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig, audioConfig);
-
-  // The event synthesizing signals that a synthesized audio chunk is received.
-  // You will receive one or more synthesizing events as a speech phrase is synthesized.
-  // You can use this callback to streaming receive the synthesized audio.
-  synthesizer.synthesizing = function (s, e) {
-    window.console.log(e);
-  };
-
-  // The synthesis started event signals that the synthesis is started.
-  synthesizer.synthesisStarted = function (s, e) {
-    window.console.log(e);
-  };
-
-  // The event synthesis completed signals that the synthesis is completed.
-  synthesizer.synthesisCompleted = function (s, e) {
-    window.console.log(e);
-  };
-
-  // The event signals that the service has stopped processing speech.
-  // This can happen when an error is encountered.
-  synthesizer.SynthesisCanceled = function (s, e) {
-    const cancellationDetails = SpeechSDK.CancellationDetails.fromResult(
-      e.result
-    );
-    window.console.log(e, cancellationDetails);
-  };
-
-  // This event signals that word boundary is received. This indicates the audio boundary of each word.
-  // The unit of e.audioOffset is tick (1 tick = 100 nanoseconds), divide by 10,000 to convert to milliseconds.
-  synthesizer.wordBoundary = function (s, e) {
-    window.console.log(e);
-  };
-
-  const complete_cb = function (result) {
-    window.console.log(result);
-    synthesizer.close();
-    synthesizer = undefined;
-  };
-  const err_cb = function (err) {
-    startSynthesisAsyncButton.disabled = false;
-    window.console.log(err);
-    synthesizer.close();
-    synthesizer = undefined;
-  };
-  synthesizer.speakTextAsync(text, complete_cb, err_cb);
+  return n;
 };

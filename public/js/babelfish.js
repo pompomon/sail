@@ -41,6 +41,14 @@ document.addEventListener("DOMContentLoaded", function () {
   phraseDiv = document.getElementById("phraseDiv");
 
   startRecognizeOnceAsyncButton.addEventListener("click", function () {
+    const language = languageTargetOptions.value;
+    const voiceLanguage = languages.find(
+      (languageItem) =>
+        languageItem.Name.indexOf(language) > -1 &&
+        (languageItem.Name.indexOf("Neural") > -1 || !isNeuralSynth)
+    ).Name;
+
+    const player = initPlayer({language: voiceLanguage, authToken: authenticationToken, region});
     startRecognizeOnceAsyncButton.disabled = true;
     phraseDiv.innerHTML = "";
 
@@ -51,7 +59,6 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
     speechConfig.speechRecognitionLanguage = languageSourceOptions.value;
-    let language = languageTargetOptions.value;
     speechConfig.addTargetLanguage(language);
 
     var audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
@@ -63,18 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let translation = result.translations.get(language);
         window.console.log(translation);
         phraseDiv.innerHTML += translation;
-        const selectedLanguage = languages.find(
-          (languageItem) =>
-            languageItem.Name.indexOf(language) > -1 &&
-            (languageItem.Name.indexOf("Neural") > -1 || !isNeuralSynth)
-        ).Name;
-        synthsizeText({
-            text: translation, 
-            language: selectedLanguage, 
-            region, 
-            authenticationToken
-        });
-
+        player.speakTextAsync(translation);
         recognizer.close();
         recognizer = undefined;
       },

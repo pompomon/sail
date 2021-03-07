@@ -104,6 +104,7 @@ html, body {
 
 .photoUploadInput {
     font-size: 0.7em;
+    visibility: hidden;
 }
 
 /*Language selector*/
@@ -120,5 +121,5 @@ html, body {
 }
 
 .controls .control {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
 }
