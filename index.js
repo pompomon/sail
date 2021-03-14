@@ -37,15 +37,16 @@ app.post("/token", async (request, response) => {
   response.setHeader("Content-Type", "text/json");
   response.end(`{ "token": "${token}" }`);
 });
-app.post("/sail", (request, response) => {
-  const imageData = request.body;
-  // Uncomment for debugging the image quality
-  // const fs = require("fs");
-  // fs.writeFileSync("test.png", imageData);
+app.post("/sail", async (request, response) => {
+  try {
+    const imageData = request.body;
+    // Uncomment for debugging the image quality
+    // const fs = require("fs");
+    // fs.writeFileSync("test.png", imageData);
 
-  const languageLocale = request.query.language;
-  const [language] = languageLocale.split("-");
-  visioner.vision(imageData, async (results) => {
+    const languageLocale = request.query.language;
+    const [language] = languageLocale.split("-");
+    const results = await visioner.vision(imageData);
     const { description, objects } = results;
     const caption = description.captions[0].text;
     const tags = description.tags;
@@ -108,7 +109,10 @@ app.post("/sail", (request, response) => {
       persons: personsTranslations,
     };
     response.end(JSON.stringify(responseObject));
-  });
+  } catch (err) {
+    console.log(err);
+    response.status(404).send("Failed to process request.");
+  }
 });
 
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));

@@ -10,7 +10,7 @@ const ComputerVisionClient = require("@azure/cognitiveservices-computervision")
   .ComputerVisionClient;
 const ApiKeyCredentials = require("@azure/ms-rest-js").ApiKeyCredentials;
 module.exports = {
-  vision: async function (imageStream, callback) {
+  vision: async (imageStream) => {
     const key = config.visionKey;
     const endpoint = config.visionEndpoint;
     const computerVisionClient = new ComputerVisionClient(
@@ -23,6 +23,6 @@ module.exports = {
       { visualFeatures: ["Description","Objects"] }
     );
     console.log(analyzeResult);
-    callback(analyzeResult);
+    return analyzeResult;
   },
 };

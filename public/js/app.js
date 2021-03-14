@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-function init() {
+const init = () => {
   // Global variables
   let webcamStream;
   let authToken;
@@ -61,20 +61,20 @@ function init() {
         console.error(request);
       }
     };
-    request.onerror = function (error) {
+    request.onerror = (error) => {
       console.error(error);
     };
 
     request.send();
   };
 
-  const submitImageFromCanvas = (canvasElement, player) => {
-    loaderElement.classList.remove('hide');
+  const submitBlobImage = (blob, player) => {
+    loaderElement.classList.remove("hide");
     const request = new XMLHttpRequest();
     const language = languages[languageSelector.selectedIndex].Locale;
     request.open("POST", `/sail?language=${language}`, true);
     request.setRequestHeader("Content-Type", "application/octet-stream");
-    request.onload = function () {
+    request.onload = () => {
       if (request.status >= 200 && request.status < 400) {
         // Success!
         console.log(request.responseText);
@@ -84,12 +84,12 @@ function init() {
         const text = `${description}. ${tags.join(",")}. ${objects.join(
           ","
         )}. ${persons}`;
-        loaderElement.classList.add('hide');
+        loaderElement.classList.add("hide");
         player.speakTextAsync(
           text,
-          function () {},
-          function (n) {
-            a.innerText = t.srTryAgain + " " + n;
+          () => {},
+          (error) => {
+            console.log(error);
           }
         );
       } else {
@@ -97,13 +97,10 @@ function init() {
       }
     };
 
-    request.onerror = function (error) {
+    request.onerror = (error) => {
       console.error(error);
     };
-
-    canvasElement.toBlob(function (blob) {
-      request.send(blob);
-    });
+    request.send(blob);
   };
 
   const initImageUpload = () => {
@@ -112,36 +109,47 @@ function init() {
     const canvasElement = document.querySelector("canvas");
     const canvasContext = canvasElement.getContext("2d");
     const image = new Image();
-    let imageSrc = null;
     let player = null;
     const clickCallback = () => {
       // Binding onClick function to properly initialize voice synthesis on iOS Safari
       const language = languages[languageSelector.selectedIndex].Name;
-      player = initPlayer({ language, authToken, region });
-      document.body.removeEventListener("click", clickCallback);
+      player = initPlayer({
+        language,
+        authToken,
+        region,
+        onAudioEndCallback: () => {
+          appCanvasContainer.classList.add("hide");
+        },
+      });
+      //document.body.removeEventListener("click", clickCallback);
     };
     document.body.addEventListener("click", clickCallback);
     document
       .getElementById("photoUpload")
-      .addEventListener("change", (event) => {
-        imageSrc = event.target.files[0];
-        image.addEventListener("load", () => {
-          appCanvasContainer.classList.remove("hide");
-          canvasContext.drawImage(
-            image,
-            0,
-            0,
-            image.width,
-            image.height,
-            0,
-            0,
-            canvasElement.width,
-            canvasElement.height
-          );
-          submitImageFromCanvas(canvasElement, player);
-          URL.revokeObjectURL(image.src);
+      .addEventListener("change", (inputChangeEvent) => {
+        const imageSrc = inputChangeEvent.target.files[0];
+        const file = inputChangeEvent.target.files[0];
+        const fileReader = new FileReader();
+        fileReader.addEventListener("load", (fileReadEvent) => {
+          submitBlobImage(fileReadEvent.target.result, player);
+          image.addEventListener("load", () => {
+            appCanvasContainer.classList.remove("hide");
+            canvasContext.drawImage(
+              image,
+              0,
+              0,
+              image.width,
+              image.height,
+              0,
+              0,
+              canvasElement.width,
+              canvasElement.height
+            );
+            URL.revokeObjectURL(image.src);
+          });
+          image.src = URL.createObjectURL(imageSrc);
         });
-        image.src = URL.createObjectURL(imageSrc);
+        fileReader.readAsArrayBuffer(file);
       });
   };
 
@@ -156,7 +164,7 @@ function init() {
     // with getUserMedia as it would overwrite existing properties.
     // Here, we will just add the getUserMedia property if it's missing.
     if (navigator.mediaDevices.getUserMedia === undefined) {
-      navigator.mediaDevices.getUserMedia = function (constraints) {
+      navigator.mediaDevices.getUserMedia = (constraints) => {
         // First get ahold of the legacy getUserMedia, if present
         var getUserMedia =
           navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -170,7 +178,7 @@ function init() {
         }
 
         // Otherwise, wrap the call to the old navigator.getUserMedia with a Promise
-        return new Promise(function (resolve, reject) {
+        return new Promise((resolve, reject) => {
           getUserMedia.call(navigator, constraints, resolve, reject);
         });
       };
@@ -181,25 +189,25 @@ function init() {
         video: { facingMode: "environment" },
         audio: false,
       })
-      .then(function (localMediaStream) {
+      .then((localMediaStream) => {
         try {
           videoElement.srcObject = localMediaStream;
         } catch (error) {
           videoElement.src = window.URL.createObjectURL(localMediaStream);
         }
         webcamStream = localMediaStream;
-        videoElement.onloadedmetadata = function (e) {
+        videoElement.onloadedmetadata = (e) => {
           videoElement.play();
         };
       })
-      .catch(function (err) {
+      .catch((err) => {
         console.log(err.name + ": " + err.message);
         initImageUpload();
       });
   };
 
   // Initialize camera
-  function initApp(videoElement) {
+  const initApp = (videoElement) => {
     const uploadFromFile = localStorage.getItem(storageModeName);
     document.getElementById("switchMode").addEventListener("click", () => {
       localStorage.setItem(
@@ -214,18 +222,28 @@ function init() {
     } else {
       initImageUpload();
     }
-  }
+  };
 
-  initApp(videoElement);
   getToken(() => {
-    getLanguages(authToken, region, renderLanguages);
+    getLanguages(authToken, region, (data, neuralSupport) => {
+      renderLanguages(data, neuralSupport);
+      initApp(videoElement);
+    });
   });
 
   if (navigator.mediaDevices.getUserMedia) {
     appCanvasContainer.classList.add("hide");
-    videoOverlayElement.addEventListener("click", function () {
+    videoOverlayElement.addEventListener("click", () => {
       const language = languages[languageSelector.selectedIndex].Name;
-      const player = initPlayer({ language, authToken, region });
+      const player = initPlayer({
+        language,
+        authToken,
+        region,
+        onAudioEndCallback: () => {
+          isProcessing = false;
+          appCanvasContainer.classList.add("hide");
+        },
+      });
       const canvasElement = document.querySelector("canvas");
       if (!isProcessing) {
         isProcessing = true;
@@ -243,13 +261,15 @@ function init() {
           canvasElement.width,
           canvasElement.height
         );
-        submitImageFromCanvas(canvasElement, player);
+        canvasElement.toBlob((blob) => {
+          submitBlobImage(blob, player);
+        });
       }
     });
   }
-}
+};
 
-function onDocumentReady(fn) {
+const onDocumentReady = (fn) => {
   if (
     document.attachEvent
       ? document.readyState === "complete"
@@ -259,12 +279,12 @@ function onDocumentReady(fn) {
   } else {
     document.addEventListener("DOMContentLoaded", fn);
   }
-}
+};
 
 onDocumentReady(init);
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
+  window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/serviceWorker.js?v=1")
       .then((res) => console.log("service worker registered"))
