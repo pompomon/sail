@@ -60,8 +60,14 @@ app.post("/sail", async (request, response) => {
     const tagTranslations = [];
     const objectTranslations = [];
     const personsTranslations = [];
-    const faceDetection = await facer.detectFace(imageData);
-    const faceDetectionResult = JSON.parse(faceDetection);
+    let faceDetectionResult;
+    try {
+      faceDetection = await facer.detectFace(imageData);
+      faceDetectionResult = JSON.parse(faceDetection);
+    } catch (error) {
+      console.log(error);
+      faceDetectionResult = [];
+    }    
     if (faceDetectionResult[0]) {
       const { faceId } = faceDetectionResult[0];
       const faceIdentification = await facer.identifyFace([faceId], "boss");
